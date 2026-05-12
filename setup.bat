@@ -20,23 +20,20 @@ if %errorlevel% neq 0 (
     exit /b
 )
 
-echo [2/3] Setting up AI Services...
-cd ai-services
-python -m venv venv
-call venv\Scripts\activate
-pip install -r requirements.txt
+echo [2/3] Preparing Database...
+cd frontend
+npx prisma generate
 cd ..
 
 echo [3/3] Setting up Frontend...
 cd frontend
 npm install
-npx prisma generate
 cd ..
 
 echo ====================================================
 echo ✅ Setup Complete!
 echo To start: 
-echo 1. Run scripts\start-ai.bat
+echo 1. Start AUTOMATIC1111 with --api
 echo 2. Run scripts\start-app.bat
 echo ====================================================
 pause

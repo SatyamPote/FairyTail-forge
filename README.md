@@ -1,57 +1,47 @@
 # 🎨 FairyTail Forge
 
-A fully offline, professional-grade AI comic generation studio. Inspired by AI Comic Factory, optimized for local execution on consumer hardware (Intel Iris Xe / 16GB RAM).
+A fully offline, professional-grade AI comic generation studio. Optimized for local execution using **Ollama** and an **Internal Comic Engine**.
 
 ## ✨ Features
 
-- **Offline Story Generation**: Uses Ollama (phi3/gemma) for scripts, characters, and panel prompts.
-- **Local Image Generation**: Uses TinySD via Python FastAPI for fast, low-memory inference.
-- **Sequential Pipeline**: Generates images one-by-one to prevent system lag and out-of-memory errors.
-- **Modern Comic UI**: Premium dark-mode interface with dynamic layouts and speech bubble previews.
-- **No Cloud APIs**: 100% private and offline.
+- **Offline Story Generation**: Uses Ollama (phi3, gemma, or mistral) for scripts and characters.
+- **Built-in Image Generator**: Uses your local `comiccraft_v10.safetensors` model directly—no extra software needed.
+- **Asymmetrical Page Layout**: Automated generation of professional comic pages with dynamic panel sizes.
+- **100% Privacy**: No cloud APIs, no data leaves your machine.
 
 ## 🛠️ Prerequisites
 
-1. **Ollama**: [Install Ollama](https://ollama.com/) and run `ollama run phi3` or `ollama run gemma2:2b`.
-2. **Python 3.10+**: For the image generation service.
+1. **Ollama**: [Install Ollama](https://ollama.com/) for story scripts.
+2. **Python 3.10+**: To run the built-in image generator.
 3. **Node.js 18+**: For the web interface.
 
 ## 🚀 Setup & Installation
 
-### 1. Initialize AI Service
-Open a terminal in the root directory:
-```bash
-cd ai-services
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
+### 1. Initialize the Project
+Run the setup script to prepare the environment:
+```powershell
+.\setup.bat
 ```
 
-### 2. Initialize Web App
-Open another terminal in the root directory:
-```bash
-cd frontend
-npm install
-npx prisma generate
-npm run dev
+### 2. Start the AI Generator
+Open a terminal and run:
+```powershell
+.\scripts\start-ai.bat
 ```
+*(This will load your `models/comiccraft_v10.safetensors` and start the engine).*
 
-### 3. Usage
-- Go to `http://localhost:3000`
-- Click "New Story"
-- Enter your prompt and watch the AI forge your comic!
-
-## 💻 Hardware Optimization
-- **TinySD**: Optimized for 512x512 resolution and 8-15 inference steps.
-- **CPU Inference**: Defaulting to CPU for stability on Intel Iris Xe; will use CUDA automatically if available.
-- **Sequential Generation**: Only one image is generated at a time to save RAM.
+### 3. Start the Web App
+Open another terminal and run:
+```powershell
+.\scripts\start-app.bat
+```
+Visit `http://localhost:3000`.
 
 ## 📁 Project Structure
-- `frontend/`: Next.js application with Zustand state management.
-- `ai-services/`: Python FastAPI service for TinySD inference.
-- `data/generated_images/`: Local storage for generated panel images.
-- `database/`: SQLite storage for projects and scripts.
+- `models/`: Place your `.safetensors` models here.
+- `ai-services/`: The internal image generation engine.
+- `data/generated_images/`: Local storage for your comic panels.
+- `frontend/`: The studio interface.
 
 ---
 Built with ❤️ for the AI Comic Community.

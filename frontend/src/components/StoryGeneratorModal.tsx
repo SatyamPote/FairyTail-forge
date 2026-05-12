@@ -67,21 +67,56 @@ export const StoryGeneratorModal = ({ isOpen, onClose }: { isOpen: boolean, onCl
     { id: 'slice of life', label: 'Slice of Life', icon: '🏠' },
   ];
 
+  const [liveLog, setLiveLog] = useState('');
+
   const handleGenerate = async () => {
     if (!prompt) return;
     
     setGeneratingStory(true);
+    setLiveLog('');
+    let fullResponse = '';
+    
     try {
-      const response = await axios.post('/api/story', {
-        genre,
-        numPanels: panels,
-        prompt,
-        model: selectedModel
+      const response = await fetch('/api/story', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          genre,
+          numPanels: panels,
+          prompt,
+          model: selectedModel
+        }),
       });
 
-      const storyData = response.data;
+      if (!response.ok) throw new Error('Failed to start stream');
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No reader available');
+
+      const decoder = new TextDecoder();
       
-      // Transform API response to our Project type
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(l => l.trim());
+        
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line);
+            if (data.response) {
+              fullResponse += data.response;
+              setLiveLog(prev => prev + data.response);
+            }
+          } catch (e) {
+            // Ignore partial JSON chunks
+          }
+        }
+      }
+
+      const storyData = JSON.parse(fullResponse);
+      
       const newProject = {
         id: Math.random().toString(36).substr(2, 9),
         title: storyData.title,
@@ -99,16 +134,12 @@ export const StoryGeneratorModal = ({ isOpen, onClose }: { isOpen: boolean, onCl
       };
 
       setCurrentProject(newProject as any);
-      
-      // Auto-start image generation for all panels
       const panelIds = newProject.panels.map(p => p.id);
       addToQueue(panelIds);
-      
       onClose();
     } catch (error: any) {
       console.error('Failed to generate story:', error);
-      const message = error.response?.data?.error || 'Generation failed. Make sure Ollama is running.';
-      alert(message);
+      alert(error.message || 'Generation failed. Make sure Ollama is running.');
     } finally {
       setGeneratingStory(false);
     }
@@ -239,6 +270,19 @@ export const StoryGeneratorModal = ({ isOpen, onClose }: { isOpen: boolean, onCl
                 ))}
               </div>
             </div>
+            {/* Live Generation Feed */}
+            {isGeneratingStory && (
+              <div className="mt-6 p-4 bg-black border border-indigo-500/30 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
+                  <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">AI Brain Feed</span>
+                </div>
+                <div className="h-40 overflow-y-auto text-[11px] font-mono text-slate-400 leading-relaxed scrollbar-hide">
+                  {liveLog || "Initializing neural link..."}
+                  <div className="w-1 h-4 bg-indigo-500 inline-block animate-pulse ml-1" />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

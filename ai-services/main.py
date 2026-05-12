@@ -1,74 +1,85 @@
-import torch
-from diffusers import StableDiffusionPipeline
+import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import torch
+from diffusers import StableDiffusionPipeline
 import uuid
-import os
 from PIL import Image
-from fastapi.middleware.cors import CORSMiddleware
+import io
+import base64
 
 app = FastAPI()
 
-# Enable CORS for frontend communication
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Configuration
-MODEL_ID = "segmind/tiny-sd"
-DEVICE = "cpu"  # Force CPU for stability on low-end hardware, or use "cuda" if available
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "generated_images")
+MODEL_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models", "comiccraft_v10.safetensors"))
+OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "generated_images"))
+DEVICE = "cpu"  # Force CPU for Intel Iris Xe stability
+
+# Ensure output directory exists
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-print(f"Loading model {MODEL_ID} on {DEVICE}...")
-pipe = StableDiffusionPipeline.from_pretrained(
-    MODEL_ID, 
-    torch_dtype=torch.float32 if DEVICE == "cpu" else torch.float16
-)
-pipe = pipe.to(DEVICE)
-# Optimize for CPU
-if DEVICE == "cpu":
+print(f"Loading ComicCraft model from: {MODEL_PATH}")
+try:
+    # Load the .safetensors model directly with explicit safetensors support
+    pipe = StableDiffusionPipeline.from_single_file(
+        MODEL_PATH,
+        torch_dtype=torch.float32,
+        use_safetensors=True,
+        load_safety_checker=False,
+        local_files_only=True
+    )
+    pipe.to(DEVICE)
+    # Optimization for CPU
     pipe.enable_attention_slicing()
+    print("Model loaded successfully!")
+except Exception as e:
+    print(f"Error loading model: {e}")
+    pipe = None
 
-print("Model loaded successfully.")
+from typing import Optional
 
 class GenerateRequest(BaseModel):
     prompt: str
-    negative_prompt: str = "bad quality, blurry, distorted, low resolution, watermark"
-    num_inference_steps: int = 12
-    guidance_scale: float = 7.0
-    width: int = 512
-    height: int = 512
+    negative_prompt: Optional[str] = "realistic, photo, blurry, low quality, extra fingers"
+    num_inference_steps: Optional[int] = 15
+    width: Optional[int] = 512
+    height: Optional[int] = 512
 
 @app.post("/generate-image")
 async def generate_image(request: GenerateRequest):
+    if pipe is None:
+        raise HTTPException(status_code=500, detail="Model not loaded")
+
     try:
-        filename = f"{uuid.uuid4()}.png"
-        filepath = os.path.join(OUTPUT_DIR, filename)
+        print(f"Generating image for prompt: {request.prompt}")
+        
+        # Add style triggers
+        full_prompt = f"comic book style, cartoon, {request.prompt}"
         
         image = pipe(
-            prompt=request.prompt,
+            prompt=full_prompt,
             negative_prompt=request.negative_prompt,
             num_inference_steps=request.num_inference_steps,
-            guidance_scale=request.guidance_scale,
+            guidance_scale=7.5,
             width=request.width,
             height=request.height
         ).images[0]
-        
-        image.save(filepath)
-        
-        # Return relative path for frontend access
-        return {"image_path": f"/api/images/{filename}", "full_path": filepath}
-    except Exception as e:
-        print(f"Error generating image: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/health")
-async def health():
-    return {"status": "ready", "model": MODEL_ID, "device": DEVICE}
+        # Generate unique filename
+        filename = f"{uuid.uuid4()}.png"
+        filepath = os.path.join(OUTPUT_DIR, filename)
+        
+        # Save locally
+        image.save(filepath)
+        print(f"Image saved to {filepath}")
+
+        return {
+            "image_path": f"/api/images/{filename}",
+            "success": True
+        }
+    except Exception as e:
+        print(f"Generation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
