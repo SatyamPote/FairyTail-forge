@@ -88,7 +88,10 @@ export const StoryGeneratorModal = ({ isOpen, onClose }: { isOpen: boolean, onCl
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to start stream');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error('No reader available');
@@ -117,29 +120,46 @@ export const StoryGeneratorModal = ({ isOpen, onClose }: { isOpen: boolean, onCl
 
       const storyData = JSON.parse(fullResponse);
       
+      const panelsList = (storyData.panels || []).map((p: any) => ({
+        ...p,
+        id: Math.random().toString(36).substr(2, 9),
+        prompt: p.imagePrompt || p.prompt || p.image_prompt || 'A comic book panel',
+        status: 'pending' as const
+      }));
+
+      // Chunk panels into pages of 4
+      const pages = [];
+      for (let i = 0; i < panelsList.length; i += 4) {
+        pages.push({
+          id: Math.random().toString(36).substr(2, 9),
+          pageNumber: Math.floor(i / 4) + 1,
+          panels: panelsList.slice(i, i + 4),
+          isCover: false
+        });
+      }
+
       const newProject = {
         id: Math.random().toString(36).substr(2, 9),
         title: storyData.title,
         genre: genre,
-        numPanels: panels,
+        theme: 'studio-dark' as const,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        characters: storyData.characters.map((c: any) => ({ ...c, id: Math.random().toString(36).substr(2, 9) })),
-        panels: storyData.panels.map((p: any) => ({
-          ...p,
-          id: Math.random().toString(36).substr(2, 9),
-          prompt: p.imagePrompt,
-          status: 'pending'
-        }))
+        characters: (storyData.characters || []).map((c: any) => ({ ...c, id: Math.random().toString(36).substr(2, 9) })),
+        pages: pages
       };
 
       setCurrentProject(newProject as any);
-      const panelIds = newProject.panels.map(p => p.id);
+      const panelIds = panelsList.map(p => p.id);
       addToQueue(panelIds);
       onClose();
     } catch (error: any) {
       console.error('Failed to generate story:', error);
-      alert(error.message || 'Generation failed. Make sure Ollama is running.');
+      if (error.message.includes('system memory')) {
+        alert(`Ollama Memory Error: Your system doesn't have enough RAM for ${selectedModel}. \n\nPlease select a smaller model like 'qwen2.5:3b' or 'tinyllama'.`);
+      } else {
+        alert(error.message || 'Generation failed. Make sure Ollama is running.');
+      }
     } finally {
       setGeneratingStory(false);
     }

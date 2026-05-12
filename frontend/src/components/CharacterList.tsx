@@ -7,7 +7,7 @@ import { User, Info } from 'lucide-react';
 export const CharacterList = () => {
   const { currentProject } = useStore();
 
-  if (!currentProject || currentProject.characters.length === 0) return null;
+  if (!currentProject || !currentProject.characters || currentProject.characters.length === 0) return null;
 
   return (
     <div className="p-6 border-t border-slate-800">

@@ -24,7 +24,8 @@ export const useQueue = () => {
       setGeneratingImages(true);
 
       const panelId = generationQueue[0];
-      const panel = currentProject?.panels.find(p => p.id === panelId);
+      const allPanels = currentProject?.pages?.flatMap(p => p.panels) || [];
+      const panel = allPanels.find(p => p.id === panelId);
 
       if (panel) {
         try {

@@ -1,4 +1,5 @@
 export type Genre = 'sci-fi' | 'cyberpunk' | 'fantasy' | 'comedy' | 'horror' | 'slice of life';
+export type StudioTheme = 'studio-dark' | 'manga-white' | 'cyberpunk-neon' | 'retro-comic' | 'noir-matte';
 
 export interface Character {
   id: string;
@@ -18,14 +19,23 @@ export interface Panel {
   dialogue?: string;
   imagePath?: string;
   status: 'pending' | 'generating' | 'completed' | 'failed';
+  layoutType?: 'standard' | 'angled' | 'splash' | 'wide' | 'tall';
+}
+
+export interface Page {
+  id: string;
+  pageNumber: number;
+  panels: Panel[];
+  layoutId?: string;
+  isCover?: boolean;
 }
 
 export interface Project {
   id: string;
   title: string;
   genre: Genre;
-  numPanels: number;
-  panels: Panel[];
+  theme: StudioTheme;
+  pages: Page[];
   characters: Character[];
   createdAt: string;
   updatedAt: string;

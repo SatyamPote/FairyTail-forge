@@ -1,118 +1,165 @@
 'use client';
 
-import { Loader2, Sparkles, Wand2, Download } from 'lucide-react';
+import { 
+  Loader2, 
+  Sparkles, 
+  Download, 
+  Printer, 
+  ZoomIn, 
+  ZoomOut, 
+  Layout,
+  ChevronLeft,
+  ChevronRight,
+  Plus
+} from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { toPng } from 'html-to-image';
 import { useStore } from '@/store/useStore';
 import { PanelCard } from './PanelCard';
-import React from 'react';
+import React, { useState } from 'react';
 
 export const ComicCanvas = () => {
-  const { currentProject, isGeneratingImages, addToQueue } = useStore();
+  const { 
+    currentProject, 
+    currentPageIndex, 
+    setCurrentPageIndex, 
+    isGeneratingImages, 
+    addToQueue,
+    studioTheme,
+    setStudioTheme
+  } = useStore();
+  
+  const [zoom, setZoom] = useState(0.8);
+
+  const currentPage = currentProject?.pages?.[currentPageIndex];
 
   const handleExport = async () => {
     if (!currentProject) return;
-    
-    const element = document.getElementById('comic-content');
+    const element = document.getElementById('comic-page');
     if (!element) return;
 
     try {
-      const dataUrl = await toPng(element, { quality: 0.95 });
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [element.offsetWidth, element.offsetHeight]
-      });
-      
-      pdf.addImage(dataUrl, 'PNG', 0, 0, element.offsetWidth, element.offsetHeight);
-      pdf.save(`${currentProject.title.replace(/\s+/g, '_')}_comic.pdf`);
+      const dataUrl = await toPng(element, { quality: 1.0, pixelRatio: 3 });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      pdf.addImage(dataUrl, 'PNG', 0, 0, 210, 297);
+      pdf.save(`${currentProject.title}_Page_${currentPageIndex + 1}.pdf`);
     } catch (err) {
       console.error('Export failed:', err);
     }
   };
 
-  const handleGenerateAll = () => {
-    if (!currentProject) return;
-    const pendingPanelIds = currentProject.panels
-      .filter(p => p.status === 'pending' || p.status === 'failed')
-      .map(p => p.id);
-    addToQueue(pendingPanelIds);
-  };
-
-  if (!currentProject) {
+  if (!currentProject || !currentPage) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-        <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mb-6">
-          <Sparkles className="w-10 h-10 text-indigo-500" />
-        </div>
-        <h2 className="text-2xl font-bold mb-2 font-display">Start Your Masterpiece</h2>
-        <p className="text-slate-500 max-w-md mx-auto mb-8">
-          Use the story generator to create a script, then watch as the AI brings your characters to life panel by panel.
-        </p>
-        <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 flex items-center gap-2 transition-all active:scale-95">
-          <Wand2 className="w-5 h-5" />
-          Generate Story
-        </button>
+      <div className="flex-1 flex items-center justify-center bg-[#020617] text-white">
+         <div className="text-center">
+           <Sparkles className="w-12 h-12 text-indigo-500 mx-auto mb-4 animate-pulse" />
+           <h2 className="text-xl font-bold uppercase tracking-widest">Awaiting Script...</h2>
+         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-slate-900/30">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold font-display">{currentProject.title}</h1>
-            <p className="text-slate-500 capitalize">{currentProject.genre} • {currentProject.numPanels} Panels</p>
+    <div className={`flex-1 flex flex-col overflow-hidden transition-colors duration-500 ${
+      studioTheme === 'manga-white' ? 'bg-slate-200' : 'bg-[#020617]'
+    }`}>
+      {/* Studio Navigation Bar */}
+      <div className="h-14 border-b border-white/5 bg-black/40 backdrop-blur-xl flex items-center justify-between px-6 shrink-0 z-40">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center bg-white/5 rounded-lg border border-white/10 overflow-hidden">
+            <button 
+              disabled={currentPageIndex === 0}
+              onClick={() => setCurrentPageIndex(currentPageIndex - 1)}
+              className="p-2 hover:bg-white/10 disabled:opacity-20 transition-colors"
+            >
+              <ChevronLeft size={16} className="text-white"/>
+            </button>
+            <div className="px-4 border-x border-white/5 text-[10px] font-black text-white uppercase tracking-widest flex flex-col items-center justify-center min-w-[80px]">
+              <span className="opacity-40">Page</span>
+              <span>{currentPageIndex + 1} / {currentProject.pages.length}</span>
+            </div>
+            <button 
+              disabled={currentPageIndex === currentProject.pages.length - 1}
+              onClick={() => setCurrentPageIndex(currentPageIndex + 1)}
+              className="p-2 hover:bg-white/10 disabled:opacity-20 transition-colors"
+            >
+              <ChevronRight size={16} className="text-white"/>
+            </button>
           </div>
-          <div className="flex gap-3">
-            {isGeneratingImages && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-indigo-600/10 border border-indigo-500/50 rounded-lg text-indigo-400 text-sm font-medium">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Generating Panels...
-              </div>
-            )}
-            <button 
-              onClick={handleGenerateAll}
-              disabled={isGeneratingImages}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white rounded-lg text-sm font-bold transition-all border border-slate-700"
-            >
-              Generate All
-            </button>
-            <button 
-              onClick={handleExport}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Export Comic
-            </button>
+          
+          <div className="h-6 w-px bg-white/10 mx-2" />
+          
+          <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg">
+            <button onClick={() => setZoom(z => Math.max(0.4, z - 0.1))} className="p-1.5 hover:bg-white/10 rounded text-slate-400"><ZoomOut size={14}/></button>
+            <span className="text-[10px] font-bold text-white w-10 text-center">{Math.round(zoom * 100)}%</span>
+            <button onClick={() => setZoom(z => Math.min(1.5, z + 0.1))} className="p-1.5 hover:bg-white/10 rounded text-white"><ZoomIn size={14}/></button>
           </div>
         </div>
 
-        <div 
-          id="comic-content" 
-          className="bg-white p-8 shadow-2xl rounded-sm border border-slate-200 mx-auto grid grid-cols-2 gap-4 min-h-[1000px] max-w-[900px]"
-        >
-          {currentProject.panels.map((panel, index) => {
-            // Asymmetrical layout logic
-            let spanClass = "";
-            if (currentProject.numPanels === 4) {
-              if (index === 0) spanClass = "row-span-2 h-full";
-              if (index === 3) spanClass = "col-span-2 h-[300px]";
-            } else if (currentProject.numPanels === 6) {
-              if (index === 0) spanClass = "col-span-2 h-[400px]";
-              if (index === 1 || index === 2) spanClass = "row-span-2 h-full";
-            } else {
-              // 8 panels
-              if (index === 0 || index === 7) spanClass = "col-span-2 h-[300px]";
-            }
+        <div className="flex items-center gap-3">
+          <select 
+            value={studioTheme}
+            onChange={(e) => setStudioTheme(e.target.value as any)}
+            className="bg-white/5 border border-white/10 text-white text-[10px] font-bold uppercase rounded-lg px-3 py-2 outline-none cursor-pointer hover:bg-white/10"
+          >
+            <option value="studio-dark">Studio Dark</option>
+            <option value="manga-white">Manga White</option>
+            <option value="cyberpunk-neon">Cyberpunk Neon</option>
+            <option value="retro-comic">Retro Comic</option>
+          </select>
+          <button 
+            onClick={handleExport}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase flex items-center gap-2 shadow-lg shadow-indigo-500/20"
+          >
+            <Download size={14} />
+            Export
+          </button>
+        </div>
+      </div>
 
-            return (
-              <div key={panel.id} className={spanClass}>
-                <PanelCard panel={panel} />
-              </div>
-            );
-          })}
+      {/* Workspace */}
+      <div className="flex-1 overflow-auto p-12 scrollbar-hide flex items-start justify-center bg-grid-slate-900/[0.04] bg-[size:40px_40px]">
+        <div 
+          className="transition-transform duration-500 ease-in-out origin-top"
+          style={{ transform: `scale(${zoom})` }}
+        >
+          {/* A4 Page Canvas */}
+          <div 
+            id="comic-page"
+            className={`relative bg-white shadow-[0_80px_120px_rgba(0,0,0,0.6)] p-[12mm] border-[1px] border-slate-200 ${
+              currentPage.isCover ? 'cover-mode' : ''
+            }`}
+            style={{ 
+              width: '210mm',
+              height: '297mm',
+              backgroundImage: studioTheme === 'retro-comic' ? 'url("/textures/paper.png")' : 'none'
+            }}
+          >
+            {/* Page Metadata Overlay */}
+            <div className="absolute top-4 left-6 text-[8px] font-black text-slate-300 uppercase tracking-[0.5em] pointer-events-none">
+              {currentProject.title} • {currentPage.isCover ? 'COVER' : `PAGE ${currentPageIndex + 1}`}
+            </div>
+
+            <div className="grid grid-cols-2 grid-rows-3 gap-6 w-full h-full relative">
+              {currentPage.panels?.map((panel, index) => (
+                <div 
+                  key={panel.id} 
+                  className={`
+                    ${index === 0 && !currentPage.isCover ? 'row-span-2' : ''}
+                    ${index === 3 && !currentPage.isCover ? 'col-span-2' : ''}
+                    ${currentPage.isCover ? 'col-span-2 row-span-3' : ''}
+                    border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-slate-50 relative group/panel
+                  `}
+                >
+                  <PanelCard panel={panel} />
+                </div>
+              ))}
+            </div>
+
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[8px] font-black text-slate-300 uppercase tracking-[1em] pointer-events-none">
+              FAIRYTAIL FORGE PROFESSIONAL
+            </div>
+          </div>
         </div>
       </div>
     </div>

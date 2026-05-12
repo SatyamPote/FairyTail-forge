@@ -1,11 +1,12 @@
 fastapi
 uvicorn
-diffusers==0.26.3
-transformers==4.38.2
-accelerate==0.27.2
+diffusers==0.25.0
+transformers==4.36.0
+accelerate==0.26.0
 torch
 pillow
 python-multipart
 python-dotenv
 safetensors
 omegaconf
+huggingface-hub==0.20.0
