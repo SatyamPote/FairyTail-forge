@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FairyTail Forge | Cinematic AI Comic Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-pure: #000000;
+            --bg-panel: #0D0D0D;
+            --bg-elevated: #161616;
+            --border: #222222;
+            --text-primary: #FFFFFF;
+            --text-secondary: #888888;
+            --text-muted: #444444;
+            --accent: #FFFFFF;
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --radius: 4px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-pure);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Layout --- */
+        .top-bar {
+            height: 48px;
+            background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar-left {
+            width: 260px;
+            background-color: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .center-workspace {
+            flex: 1;
+            background-color: var(--bg-pure);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+
+        .sidebar-right {
+            width: 300px;
+            background-color: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bottom-panel {
+            height: 240px;
+            background-color: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            display: flex;
+        }
+
+        /* --- Components --- */
+        .logo {
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 24px;
+            height: 100%;
+            align-items: center;
+            margin-left: 48px;
+        }
+
+        .tab {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab.active {
+            color: var(--text-primary);
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .status-indicators {
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #33FF33;
+        }
+
+        .section-header {
+            padding: 12px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .character-card {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .character-card:hover {
+            background-color: var(--bg-elevated);
+        }
+
+        .character-card.active {
+            background-color: var(--bg-elevated);
+            border-left: 2px solid var(--accent);
+        }
+
+        .char-info {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .char-avatar {
+            width: 32px;
+            height: 32px;
+            background-color: #222;
+            border-radius: var(--radius);
+            object-fit: cover;
+            border: 1px solid var(--border);
+        }
+
+        .char-name {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .char-tags {
+            margin-top: 8px;
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 9px;
+            background-color: var(--bg-pure);
+            border: 1px solid var(--border);
+            padding: 2px 6px;
+            border-radius: 2px;
+            color: var(--text-secondary);
+        }
+
+        /* --- Canvas --- */
+        .canvas-toolbar {
+            height: 40px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid var(--border);
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .tool-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+        }
+
+        .tool-btn:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-elevated);
+        }
+
+        .comic-page {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow-y: auto;
+        }
+
+        .page-surface {
+            width: 700px;
+            min-height: 1000px;
+            background-color: #FFFFFF;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: repeat(3, 300px);
+            gap: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .panel {
+            background-color: #EEE;
+            border: 4px solid #000;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .panel img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: contrast(1.1) brightness(1.1);
+        }
+
+        .panel-1 { grid-column: span 2; }
+
+        /* --- Generation --- */
+        .gen-controls {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        textarea {
+            background-color: var(--bg-pure);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 12px;
+            font-family: var(--font-main);
+            font-size: 13px;
+            border-radius: var(--radius);
+            resize: none;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: var(--text-secondary);
+        }
+
+        select {
+            background-color: var(--bg-pure);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px;
+            font-size: 12px;
+            border-radius: var(--radius);
+            outline: none;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: var(--bg-pure);
+            border: none;
+            padding: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .vram-monitor {
+            margin-top: auto;
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .vram-bar-bg {
+            height: 4px;
+            background-color: var(--bg-pure);
+            border-radius: 2px;
+            margin-top: 8px;
+        }
+
+        .vram-bar-fill {
+            height: 100%;
+            width: 42%;
+            background-color: var(--text-secondary);
+            border-radius: 2px;
+        }
+
+        /* --- Script --- */
+        .script-editor {
+            flex: 1;
+            border-right: 1px solid var(--border);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timeline {
+            width: 400px;
+            padding: 16px;
+            background-color: var(--bg-elevated);
+        }
+
+        .script-content {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-secondary);
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .script-line {
+            padding: 4px 0;
+            display: flex;
+            gap: 16px;
+        }
+
+        .line-num {
+            color: var(--text-muted);
+            width: 24px;
+            text-align: right;
+        }
+
+        .line-text .keyword { color: #FFF; font-weight: 500; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-pure);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div style="display: flex; align-items: center;">
+            <div class="logo">
+                <i data-lucide="zap" style="width: 18px; color: #FFF;"></i>
+                FAIRYTAIL FORGE
+            </div>
+            <div class="tabs">
+                <a class="tab active">Studio</a>
+                <a class="tab">Generate</a>
+                <a class="tab">Characters</a>
+                <a class="tab">Assets</a>
+                <a class="tab">Models</a>
+                <a class="tab">Export</a>
+            </div>
+        </div>
+        <div class="status-indicators">
+            <div class="status-item"><div class="dot"></div> OLLAMA: QWEN3-8B</div>
+            <div class="status-item"><div class="dot"></div> COMFYUI: ONLINE</div>
+            <div class="status-item" style="color: var(--text-muted)">|</div>
+            <i data-lucide="settings" style="width: 16px; cursor: pointer;"></i>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar-left">
+            <div class="section-header">
+                CHARACTERS
+                <i data-lucide="plus" style="width: 14px; cursor: pointer;"></i>
+            </div>
+            <div class="character-card active">
+                <div class="char-info">
+                    <img src="manga_panel_1_1778591872224.png" class="char-avatar">
+                    <div>
+                        <div class="char-name">Kaelen Vox</div>
+                        <div class="char-tags">
+                            <span class="tag">Cyberpunk</span>
+                            <span class="tag">Detective</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="character-card">
+                <div class="char-info">
+                    <div class="char-avatar" style="background-color: #111;"></div>
+                    <div>
+                        <div class="char-name">Unit 734</div>
+                        <div class="char-tags">
+                            <span class="tag">Android</span>
+                            <span class="tag">Rogue</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-header" style="margin-top: 24px;">SCENE HISTORY</div>
+            <div style="padding: 16px; font-size: 11px; color: var(--text-muted);">
+                No recent generations.
+            </div>
+        </div>
+
+        <div class="center-workspace">
+            <div class="canvas-toolbar">
+                <button class="tool-btn"><i data-lucide="mouse-pointer-2" style="width: 16px;"></i></button>
+                <button class="tool-btn"><i data-lucide="hand" style="width: 16px;"></i></button>
+                <div style="height: 16px; width: 1px; background: var(--border);"></div>
+                <button class="tool-btn"><i data-lucide="layout-grid" style="width: 16px;"></i></button>
+                <button class="tool-btn"><i data-lucide="zoom-in" style="width: 16px;"></i></button>
+                <span style="font-size: 11px; color: var(--text-secondary); margin-left: auto;">A4_PORTRAIT_300DPI</span>
+            </div>
+
+            <div class="comic-page">
+                <div class="page-surface">
+                    <div class="panel panel-1">
+                        <img src="manga_panel_2_1778591890185.png">
+                    </div>
+                    <div class="panel">
+                        <img src="manga_panel_1_1778591872224.png">
+                    </div>
+                    <div class="panel">
+                        <img src="manga_panel_3_1778591906755.png">
+                    </div>
+                    <div class="panel" style="grid-column: span 2; background: #000; display: flex; align-items: center; justify-content: center; color: #444; border-style: dashed; border-width: 2px;">
+                        <div style="text-align: center;">
+                            <i data-lucide="image" style="width: 32px; margin-bottom: 8px;"></i>
+                            <div style="font-size: 12px;">READY TO GENERATE</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-right">
+            <div class="section-header">GENERATION CONTROLS</div>
+            <div class="gen-controls">
+                <div class="input-group">
+                    <div class="input-label">STORY PROMPT</div>
+                    <textarea rows="6" placeholder="Kaelen walks through the rainy streets, lighting a cigarette..."></textarea>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">ART STYLE</div>
+                    <select>
+                        <option>Dark Manga (Ink High Contrast)</option>
+                        <option>Classic Shonen</option>
+                        <option>Noir Graphic Novel</option>
+                        <option>Sketchbook</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">MODEL</div>
+                    <select>
+                        <option>Stable Diffusion XL (Local)</option>
+                        <option>Flux.1 [Dev]</option>
+                    </select>
+                </div>
+
+                <button class="btn-primary">GENERATE PANEL</button>
+
+                <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                        <span style="color: var(--text-secondary);">Rendering Progress</span>
+                        <span style="color: var(--text-primary);">0%</span>
+                    </div>
+                    <div class="vram-monitor" style="padding: 0; border: none;">
+                         <div class="vram-bar-bg"><div class="vram-bar-fill" style="width: 0%; background: #FFF;"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vram-monitor">
+                <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary);">
+                    <span>VRAM USAGE</span>
+                    <span>5.2 / 12.0 GB</span>
+                </div>
+                <div class="vram-bar-bg"><div class="vram-bar-fill"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-panel">
+        <div class="script-editor">
+            <div class="section-header" style="padding-top: 0;">SCRIPT EDITOR</div>
+            <div class="script-content">
+                <div class="script-line"><span class="line-num">01</span><span class="line-text"><span class="keyword">PANEL_1:</span> EXT. CITY STREETS - NIGHT</span></div>
+                <div class="script-line"><span class="line-num">02</span><span class="line-text"><span class="keyword">CHARACTER:</span> KAELEN VOX</span></div>
+                <div class="script-line"><span class="line-num">03</span><span class="line-text"><span class="keyword">ACTION:</span> Walking through the heavy rain.</span></div>
+                <div class="script-line"><span class="line-num">04</span><span class="line-text"><span class="keyword">DIALOGUE:</span> "Another night in the pit."</span></div>
+                <div class="script-line"><span class="line-num">05</span><span class="line-text"></span></div>
+                <div class="script-line"><span class="line-num">06</span><span class="line-text"><span class="keyword">PANEL_2:</span> CU - KAELEN</span></div>
+                <div class="script-line"><span class="line-num">07</span><span class="line-text"><span class="keyword">ACTION:</span> Lighting a match. The flame reflects in his eyes.</span></div>
+            </div>
+        </div>
+        <div class="timeline">
+            <div class="section-header" style="padding-top: 0;">PROMPT ENHANCER</div>
+            <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.6;">
+                Auto-enhancing with <span style="color: #FFF;">Cinematic Lighting</span>, <span style="color: #FFF;">Hyper-detailed Ink</span>, and <span style="color: #FFF;">Manga Aesthetic</span>.
+                <br><br>
+                <span style="color: var(--text-muted);">Character consistency lock: ACTIVE</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
