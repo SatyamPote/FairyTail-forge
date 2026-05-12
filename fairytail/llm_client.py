@@ -135,22 +135,38 @@ def generate_script_stream(
     return parse_script(full_text)
 
 
-def enhance_image_prompt(raw_prompt: str, model: str = DEFAULT_LLM_MODEL) -> str:
-    """Expand a bare image prompt into a rich SD-compatible string."""
-    system = (
-        "You are a Stable Diffusion prompt engineer. "
-        "Given a bare scene description, output a single, comma-separated "
-        "positive prompt optimised for SDXL/Flux. "
-        "Include: art style, lighting, camera, quality tags, character details. "
-        "Max 120 words. No explanations."
+def enhance_image_prompt(script: PanelScript, model: str = DEFAULT_LLM_MODEL) -> str:
+    """Expand a bare panel script into a rich SD-compatible string using the Master Template."""
+    from .config import IMAGE_PROMPT_TEMPLATE
+    
+    prompt_context = (
+        f"Scene: {script.scene}\n"
+        f"Camera: {script.camera}\n"
+        f"Characters: {script.characters}\n"
+        f"Emotion: {script.emotion}"
     )
+
+    system = (
+        "You are an expert Stable Diffusion prompt engineer. "
+        "Expand the given scene into a high-detail prompt. "
+        "Follow the template exactly. No conversational text."
+    )
+    
     payload = {
         "model":  model,
         "system": system,
-        "prompt": raw_prompt,
+        "prompt": f"Template to fill:\n{IMAGE_PROMPT_TEMPLATE}\n\nData:\n{prompt_context}",
         "stream": False,
-        "options": {"temperature": 0.5, "num_predict": 200},
     }
-    resp = requests.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload, timeout=60)
-    resp.raise_for_status()
-    return resp.json().get("response", raw_prompt).strip()
+    try:
+        resp = requests.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload, timeout=60)
+        resp.raise_for_status()
+        return resp.json().get("response", "").strip()
+    except Exception:
+        # Fallback to a basic assembly if LLM fails
+        return IMAGE_PROMPT_TEMPLATE.format(
+            character=script.characters,
+            scene=script.scene,
+            camera=script.camera,
+            emotion=script.emotion
+        )

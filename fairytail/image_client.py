@@ -35,85 +35,78 @@ def _build_sdxl_workflow(
     scheduler: str = DEFAULT_SCHEDULER,
     seed: int = -1,
     checkpoint: str = "sd_xl_base_1.0.safetensors",
+    character_reference_path: str | None = None,
 ) -> dict:
     if seed == -1:
         import random
         seed = random.randint(0, 2**32 - 1)
 
-    return {
+    workflow = {
         "3": {
             "class_type": "KSampler",
             "inputs": {
-                "cfg": cfg,
-                "denoise": 1,
-                "latent_image": ["5", 0],
-                "model": ["4", 0],
-                "negative": ["7", 0],
-                "positive": ["6", 0],
-                "sampler_name": sampler,
-                "scheduler": scheduler,
-                "seed": seed,
-                "steps": steps,
+                "cfg": cfg, "denoise": 1, "latent_image": ["5", 0], "model": ["4", 0],
+                "negative": ["7", 0], "positive": ["6", 0], "sampler_name": sampler,
+                "scheduler": scheduler, "seed": seed, "steps": steps,
             },
         },
-        "4": {
-            "class_type": "CheckpointLoaderSimple",
-            "inputs": {"ckpt_name": checkpoint},
-        },
-        "5": {
-            "class_type": "EmptyLatentImage",
-            "inputs": {"batch_size": 1, "height": height, "width": width},
-        },
-        "6": {
-            "class_type": "CLIPTextEncode",
-            "inputs": {
-                "clip": ["4", 1],
-                "text": positive,
-            },
-        },
-        "7": {
-            "class_type": "CLIPTextEncode",
-            "inputs": {
-                "clip": ["4", 1],
-                "text": negative,
-            },
-        },
-        "8": {
-            "class_type": "VAEDecode",
-            "inputs": {"samples": ["3", 0], "vae": ["4", 2]},
-        },
-        "9": {
-            "class_type": "SaveImage",
-            "inputs": {
-                "filename_prefix": "fairytail_panel",
-                "images": ["8", 0],
-            },
-        },
+        "4": { "class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": checkpoint} },
+        "5": { "class_type": "EmptyLatentImage", "inputs": {"batch_size": 1, "height": height, "width": width} },
+        "6": { "class_type": "CLIPTextEncode", "inputs": {"clip": ["4", 1], "text": positive} },
+        "7": { "class_type": "CLIPTextEncode", "inputs": {"clip": ["4", 1], "text": negative} },
+        "8": { "class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["4", 2]} },
+        "9": { "class_type": "SaveImage", "inputs": {"filename_prefix": "fairytail_panel", "images": ["8", 0]} },
     }
+
+    # Add IP-Adapter logic if a character reference is provided
+    if character_reference_path:
+        workflow["10"] = { "class_type": "LoadImage", "inputs": {"image": character_reference_path} }
+        workflow["11"] = { "class_type": "IPAdapterApply", "inputs": {
+            "ipadapter": ["12", 0], "clip_vision": ["13", 0], "image": ["10", 0],
+            "model": ["4", 0], "weight": 0.7, "noise": 0.3
+        }}
+        workflow["12"] = { "class_type": "IPAdapterLoader", "inputs": {"ipadapter_name": "ip-adapter-plus_sdxl_vit-h.safetensors"} }
+        workflow["13"] = { "class_type": "CLIPVisionLoader", "inputs": {"clip_name": "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"} }
+        workflow["3"]["inputs"]["model"] = ["11", 0] # Route model through IP-Adapter
+
+    return workflow
 
 
 # ── API helpers ────────────────────────────────────────────────────────────────
 
 def check_comfyui() -> tuple[bool, str]:
     try:
-        r = requests.get(f"{COMFYUI_BASE_URL}/system_stats", timeout=5)
-        data = r.json()
-        return True, f"ComfyUI online — {data.get('system', {}).get('python_version', 'OK')}"
+        # Check basic connectivity
+        r = requests.get(COMFYUI_BASE_URL, timeout=3)
+        if r.status_code == 200:
+            return True, "ComfyUI Online"
+        return False, f"ComfyUI offline (Code {r.status_code})"
     except Exception as exc:
         return False, f"ComfyUI offline: {exc}"
 
 
 def list_checkpoints() -> list[str]:
+    """Scan both the ComfyUI API and the local engine folder for models."""
+    ckpts = []
+    
+    # 1. Try API first
     try:
-        r = requests.get(f"{COMFYUI_BASE_URL}/object_info", timeout=10)
-        info = r.json()
-        ckpts = info.get("CheckpointLoaderSimple", {}) \
-                    .get("input", {}) \
-                    .get("required", {}) \
-                    .get("ckpt_name", [[], {}])
-        return ckpts[0] if ckpts else []
-    except Exception:
-        return []
+        r = requests.get(f"{COMFYUI_BASE_URL}/object_info", timeout=5)
+        if r.ok:
+            info = r.json()
+            ckpts_data = info.get("CheckpointLoaderSimple", {}).get("input", {}).get("required", {}).get("ckpt_name", [[], {}])
+            ckpts.extend(ckpts_data[0])
+    except:
+        pass
+
+    # 2. Try local filesystem fallback
+    local_path = Path(__file__).parent.parent / "engine" / "comfyui" / "models" / "checkpoints"
+    if local_path.exists():
+        for f in local_path.glob("*.safetensors"):
+            if f.name not in ckpts:
+                ckpts.append(f.name)
+    
+    return sorted(list(set(ckpts)))
 
 
 def _queue_prompt(workflow: dict, client_id: str) -> str:
@@ -156,6 +149,7 @@ def generate_panel_image(
     height: int = IMAGE_HEIGHT,
     steps: int = DEFAULT_STEPS,
     cfg: float = DEFAULT_CFG,
+    character_reference_path: str | None = None,
     on_progress: Callable[[str], None] | None = None,
 ) -> Path:
     """Generate a single panel image via ComfyUI and return its local path."""
@@ -166,6 +160,7 @@ def generate_panel_image(
         width=width, height=height,
         steps=steps, cfg=cfg,
         checkpoint=checkpoint,
+        character_reference_path=character_reference_path,
     )
 
     if on_progress:

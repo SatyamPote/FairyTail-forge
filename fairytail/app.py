@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sys
+import traceback
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QSize
@@ -70,30 +71,37 @@ class MainWindow(QMainWindow):
         self.resize(1440, 900)
 
         # ── Tabs ──────────────────────────────────────────────────────────────
-        tabs = QTabWidget()
-        tabs.setTabPosition(QTabWidget.TabPosition.North)
+        try:
+            tabs = QTabWidget()
+            tabs.setTabPosition(QTabWidget.TabPosition.North)
 
-        self.dashboard_tab   = DashboardTab()
-        self.generate_tab    = GenerateTab()
-        self.gallery_tab     = GalleryTab()
-        self.characters_tab  = CharactersTab()
-        self.settings_tab    = SettingsTab()
+            self.dashboard_tab   = DashboardTab()
+            self.generate_tab    = GenerateTab()
+            self.gallery_tab     = GalleryTab()
+            self.characters_tab  = CharactersTab()
+            self.settings_tab    = SettingsTab()
 
-        tabs.addTab(self.dashboard_tab,  "⌂  Dashboard")
-        tabs.addTab(self.generate_tab,   "✦  Generate")
-        tabs.addTab(self.gallery_tab,    "⬛  Gallery")
-        tabs.addTab(self.characters_tab, "👤  Characters")
-        tabs.addTab(self.settings_tab,   "⚙  Settings")
+            tabs.addTab(self.dashboard_tab,  "⌂  Dashboard")
+            tabs.addTab(self.generate_tab,   "✦  Generate")
+            tabs.addTab(self.gallery_tab,    "⬛  Gallery")
+            tabs.addTab(self.characters_tab, "👤  Characters")
+            tabs.addTab(self.settings_tab,   "⚙  Settings")
 
-        self.setCentralWidget(tabs)
+            self.setCentralWidget(tabs)
 
-        # ── Status bar ────────────────────────────────────────────────────────
-        self.status = QStatusBar()
-        self.setStatusBar(self.status)
-        self._check_services()
+            # ── Status bar ────────────────────────────────────────────────────────
+            self.status = QStatusBar()
+            self.setStatusBar(self.status)
+            self._check_services()
 
-        # forward generate → gallery refresh
-        self.generate_tab.comic_saved.connect(self.gallery_tab.refresh)
+            # forward generate → gallery refresh
+            self.generate_tab.comic_saved.connect(self.gallery_tab.refresh)
+        except Exception as e:
+            error_msg = f"CRITICAL UI ERROR: {str(e)}\n\n{traceback.format_exc()}"
+            with open("crash_report.txt", "w") as f:
+                f.write(error_msg)
+            print(error_msg)
+            self.setCentralWidget(QLabel(f"System Error during startup.\nCheck crash_report.txt\n\n{str(e)}"))
 
     def _check_services(self):
         ollama_ok, ollama_msg = check_ollama()

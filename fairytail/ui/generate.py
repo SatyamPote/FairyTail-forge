@@ -6,7 +6,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QPixmap
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
+    QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QSplitter,
     QLabel, QTextEdit, QLineEdit, QComboBox,
     QSpinBox, QDoubleSpinBox, QScrollArea,
     QFrame, QFileDialog, QMessageBox, QProgressBar,
@@ -220,14 +220,13 @@ class GenerateTab(QWidget):
         """)
         rl.addWidget(self.script_view)
 
-        rl.addWidget(section_label("🎬  Panels"))
+        rl.addWidget(section_label("🎬  Comic Grid (2x2)"))
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
         self.panels_container = QWidget()
-        self.panels_layout = QHBoxLayout(self.panels_container)
+        self.panels_layout = QGridLayout(self.panels_container)
         self.panels_layout.setSpacing(16)
-        self.panels_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         scroll.setWidget(self.panels_container)
         rl.addWidget(scroll, stretch=1)
 
@@ -331,11 +330,11 @@ class GenerateTab(QWidget):
         self.comic_saved.emit(comic.id)
         session.close()
 
-        # Render panel cards
-        for panel in panels:
+        # Render panel cards (2x2 Grid)
+        for i, panel in enumerate(panels):
             card = PanelCard(panel)
-            card.setFixedWidth(300)
-            self.panels_layout.addWidget(card)
+            row, col = divmod(i, 2)
+            self.panels_layout.addWidget(card, row, col)
             self._panel_cards.append(card)
 
     def _on_generate_images(self):

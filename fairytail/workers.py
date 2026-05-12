@@ -60,6 +60,7 @@ class ImageWorker(QThread):
         checkpoint: str = "sd_xl_base_1.0.safetensors",
         steps: int = 25,
         cfg: float = 7.5,
+        character_reference_path: str | None = None,
         parent=None,
     ):
         super().__init__(parent)
@@ -68,24 +69,34 @@ class ImageWorker(QThread):
         self.checkpoint = checkpoint
         self.steps      = steps
         self.cfg        = cfg
+        self.character_reference_path = character_reference_path
 
     def run(self):
+        from .llm_client import enhance_image_prompt
         image_paths: list[str] = []
         try:
             for panel in self.panels:
+                # STEP: Prompt Enhancer (User architecture)
+                self.progress.emit(f"Enhancing prompt for Panel {panel.number}…")
+                enhanced_prompt = enhance_image_prompt(panel)
+                
+                # STEP: Image Generation
                 path = generate_panel_image(
-                    positive_prompt=panel.image_prompt or panel.scene,
+                    positive_prompt=enhanced_prompt,
                     comic_id=self.comic_id,
                     panel_number=panel.number,
                     checkpoint=self.checkpoint,
                     steps=self.steps,
                     cfg=self.cfg,
+                    character_reference_path=self.character_reference_path,
                     on_progress=self.progress.emit,
                 )
                 image_paths.append(str(path))
                 self.panel_done.emit(panel.number, str(path))
             self.all_done.emit(image_paths)
         except Exception as exc:
+            import traceback
+            print(traceback.format_exc())
             self.error_occurred.emit(str(exc))
 
 

@@ -7,7 +7,7 @@ OLLAMA_BASE_URL  = os.getenv("OLLAMA_BASE_URL",  "http://localhost:11434")
 COMFYUI_BASE_URL = os.getenv("COMFYUI_BASE_URL", "http://127.0.0.1:8188")
 
 # ── Default models ─────────────────────────────────────────────────────────────
-DEFAULT_LLM_MODEL   = os.getenv("FAIRYTAIL_LLM",   "qwen3:8b")
+DEFAULT_LLM_MODEL   = os.getenv("FAIRYTAIL_LLM",   "qwen2.5:3b")
 DEFAULT_IMAGE_MODEL = os.getenv("FAIRYTAIL_IMAGE",  "sdxl")   # ComfyUI checkpoint alias
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
@@ -36,26 +36,39 @@ NEGATIVE_PROMPT = (
 
 # ── Master comic-writing system prompt ────────────────────────────────────────
 COMIC_SYSTEM_PROMPT = """\
-You are a cinematic AI comic-writing engine specialised in graphic novel storytelling.
+You are an AI comic generation engine. Your task: Generate cinematic comic scripts with highly visual scenes.
 
 Rules:
-- Keep character appearance, clothing, and colour palette CONSISTENT across all panels.
-- Describe camera angles (close-up, wide shot, bird's-eye, worm's-eye, etc.).
-- Describe lighting (dramatic, soft, back-lit, neon, golden-hour, etc.).
-- Describe character emotions precisely.
-- Describe environment and atmosphere in detail.
-- Generate concise, punchy dialogue.
-- Create strong cinematic pacing between panels.
-- End with a cliffhanger or emotional beat.
+• Keep character appearance consistent
+• Keep clothing consistent
+• Describe camera angles
+• Describe lighting
+• Describe emotions
+• Describe environment
+• Generate concise dialogue
+• Create strong cinematic pacing
+• Keep panel descriptions detailed
+• Maintain story continuity
 
-Output format — repeat exactly for every panel:
-PANEL {n}:
-  Scene: <environment and action>
-  Camera: <angle and framing>
-  Characters: <who is present and what they look like>
-  Emotion: <dominant emotion>
-  Dialogue: <spoken words or NONE>
-  Image Prompt: <rich SD/Flux image generation prompt, comma-separated tags>
+Output format:
+PANEL 1:
+Scene:
+Camera:
+Characters:
+Emotion:
+Dialogue:
+Image Prompt:
 
-Do NOT add any text outside the panel blocks.
+PANEL 2:
+(and so on...)
+"""
+
+IMAGE_PROMPT_TEMPLATE = """\
+masterpiece, cinematic comic panel, high detail, dramatic lighting, consistent character, comic art style, clean lineart, dynamic pose, professional illustration, detailed environment, storytelling composition
+Character: {character}
+Scene: {scene}
+Camera: {camera}
+Emotion: {emotion}
+Style: comic book, graphic novel, cinematic
+Negative Prompt: low quality, blurry, bad anatomy, extra limbs, distorted face, watermark, text, cropped
 """
