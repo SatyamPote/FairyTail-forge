@@ -10,6 +10,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -19,6 +20,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useProjects } from "@/context/ProjectContext";
 import { useColors } from "@/hooks/useColors";
 import { apiUrl, uid } from "@/lib/api";
+import { generateDemoStory } from "@/lib/offlineDemo";
+import { loadDemoMode, setDemoMode } from "@/lib/settings";
 import { Genre } from "@/types";
 
 const GENRES: { id: Genre; label: string }[] = [
@@ -45,6 +48,16 @@ export default function ForgeScreen() {
   const [loadingModels, setLoadingModels] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [liveLog, setLiveLog] = useState("");
+  const [demoMode, setDemoModeState] = useState(false);
+
+  useEffect(() => {
+    loadDemoMode().then(setDemoModeState);
+  }, []);
+
+  const toggleDemoMode = (next: boolean) => {
+    setDemoModeState(next);
+    setDemoMode(next);
+  };
 
   const fetchModels = async () => {
     setLoadingModels(true);
@@ -68,6 +81,56 @@ export default function ForgeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const buildAndAddProject = (story: {
+    title?: string;
+    characters?: { name: string; description: string; appearance: string }[];
+    panels?: {
+      panelNumber?: number;
+      content?: string;
+      narration?: string;
+      dialogue?: string;
+      imagePrompt?: string;
+      prompt?: string;
+      image_prompt?: string;
+    }[];
+  }) => {
+    const panelList = (story.panels || []).map((p, i) => ({
+      id: uid(),
+      panelNumber: p.panelNumber ?? i + 1,
+      prompt: p.imagePrompt || p.prompt || p.image_prompt || "A comic panel",
+      content: p.content,
+      narration: p.narration,
+      dialogue: p.dialogue,
+      status: "pending" as const,
+    }));
+
+    const pages = [];
+    for (let i = 0; i < panelList.length; i += 4) {
+      pages.push({
+        id: uid(),
+        pageNumber: Math.floor(i / 4) + 1,
+        panels: panelList.slice(i, i + 4),
+      });
+    }
+
+    const newProject = {
+      id: uid(),
+      title: story.title || "Untitled Comic",
+      genre,
+      theme: "studio-dark" as const,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      characters: (story.characters || []).map((c) => ({
+        ...c,
+        id: uid(),
+      })),
+      pages,
+    };
+
+    addProject(newProject);
+    enqueuePanels(panelList.map((p) => p.id));
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     if (Platform.OS !== "web") {
@@ -75,6 +138,32 @@ export default function ForgeScreen() {
     }
     setGenerating(true);
     setLiveLog("");
+
+    // OFFLINE DEMO MODE: skip Ollama, use bundled templates.
+    if (demoMode) {
+      try {
+        setLiveLog("Loading offline story template…\n");
+        await new Promise((r) => setTimeout(r, 400));
+        const story = generateDemoStory({
+          prompt,
+          genre,
+          numPanels: panels,
+        });
+        setLiveLog(
+          (prev) =>
+            prev +
+            `Title: ${story.title}\nCharacters: ${story.characters
+              .map((c) => c.name)
+              .join(", ")}\nPanels: ${story.panels.length}\n`,
+        );
+        await new Promise((r) => setTimeout(r, 250));
+        buildAndAddProject(story);
+        router.back();
+      } finally {
+        setGenerating(false);
+      }
+      return;
+    }
 
     let fullResponse = "";
     try {
@@ -145,41 +234,7 @@ export default function ForgeScreen() {
         }[];
       };
 
-      const panelList = (story.panels || []).map((p, i) => ({
-        id: uid(),
-        panelNumber: p.panelNumber ?? i + 1,
-        prompt: p.imagePrompt || p.prompt || p.image_prompt || "A comic panel",
-        content: p.content,
-        narration: p.narration,
-        dialogue: p.dialogue,
-        status: "pending" as const,
-      }));
-
-      const pages = [];
-      for (let i = 0; i < panelList.length; i += 4) {
-        pages.push({
-          id: uid(),
-          pageNumber: Math.floor(i / 4) + 1,
-          panels: panelList.slice(i, i + 4),
-        });
-      }
-
-      const newProject = {
-        id: uid(),
-        title: story.title || "Untitled Comic",
-        genre,
-        theme: "studio-dark" as const,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        characters: (story.characters || []).map((c) => ({
-          ...c,
-          id: uid(),
-        })),
-        pages,
-      };
-
-      addProject(newProject);
-      enqueuePanels(panelList.map((p) => p.id));
+      buildAndAddProject(story);
       router.back();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Generation failed";
@@ -265,27 +320,82 @@ export default function ForgeScreen() {
           />
         </Section>
 
+        <Section icon="wifi-off" label="Offline Demo Mode" colors={colors}>
+          <View
+            style={[
+              styles.demoBox,
+              {
+                backgroundColor: demoMode
+                  ? colors.primary + "1A"
+                  : colors.secondary,
+                borderColor: demoMode ? colors.primary : colors.border,
+              },
+            ]}
+          >
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={[styles.demoTitle, { color: colors.foreground }]}>
+                {demoMode ? "Offline mode ON" : "Offline mode OFF"}
+              </Text>
+              <Text
+                style={[
+                  styles.demoSub,
+                  { color: colors.mutedForeground },
+                ]}
+              >
+                {demoMode
+                  ? "No server needed. Bundled story templates + manga placeholder panels."
+                  : "Uses your local Ollama + Stable Diffusion server."}
+              </Text>
+            </View>
+            <Switch
+              value={demoMode}
+              onValueChange={toggleDemoMode}
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
+          </View>
+        </Section>
+
         <Section icon="cpu" label="AI Model" colors={colors}>
           <View style={styles.chipGrid}>
-            {loadingModels ? (
-              <ActivityIndicator color={colors.primary} />
-            ) : models.length === 0 ? (
+            {demoMode ? (
               <View
                 style={[
                   styles.warningBox,
                   {
-                    backgroundColor: colors.destructive + "1A",
-                    borderColor: colors.destructive + "55",
+                    backgroundColor: colors.primary + "14",
+                    borderColor: colors.primary + "44",
                   },
                 ]}
               >
                 <Text
                   style={[
                     styles.warningText,
-                    { color: colors.destructive },
+                    { color: colors.mutedForeground },
                   ]}
                 >
-                  No Ollama models detected. Run 'ollama serve' on your host.
+                  Skipping Ollama — offline demo mode is on.
+                </Text>
+              </View>
+            ) : loadingModels ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : models.length === 0 ? (
+              <View
+                style={[
+                  styles.warningBox,
+                  {
+                    backgroundColor: colors.secondary,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.warningText,
+                    { color: colors.mutedForeground },
+                  ]}
+                >
+                  No local LLM detected. Start Ollama on your host, or flip on
+                  Offline Demo Mode above to forge with bundled templates.
                 </Text>
               </View>
             ) : (
@@ -462,7 +572,9 @@ export default function ForgeScreen() {
           {generating ? (
             <>
               <ActivityIndicator color="#fff" />
-              <Text style={styles.generateText}>Writing Script…</Text>
+              <Text style={styles.generateText}>
+                {demoMode ? "Loading Template…" : "Writing Script…"}
+              </Text>
             </>
           ) : (
             <>
@@ -476,7 +588,7 @@ export default function ForgeScreen() {
                   },
                 ]}
               >
-                Forge Story
+                {demoMode ? "Forge (Offline)" : "Forge Story"}
               </Text>
               <Feather
                 name="chevron-right"
@@ -589,7 +701,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  warningText: { fontSize: 12, fontFamily: "Inter_500Medium" },
+  warningText: { fontSize: 12, fontFamily: "Inter_500Medium", lineHeight: 18 },
+  demoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  demoTitle: { fontSize: 13, fontFamily: "Inter_700Bold", marginBottom: 2 },
+  demoSub: { fontSize: 11, fontFamily: "Inter_400Regular", lineHeight: 16 },
   feed: {
     borderWidth: 1,
     borderRadius: 14,

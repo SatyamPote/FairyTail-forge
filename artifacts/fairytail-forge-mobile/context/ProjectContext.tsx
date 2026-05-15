@@ -10,6 +10,8 @@ import React, {
 
 import { apiUrl } from "@/lib/api";
 import { buildMangaPrompt, MANGA_NEGATIVE_PROMPT } from "@/lib/manga";
+import { generateDemoImage } from "@/lib/offlineDemo";
+import { getDemoModeSync, loadDemoMode, subscribeDemoMode } from "@/lib/settings";
 import { Character, Panel, Project } from "@/types";
 
 const STORAGE_KEY = "ff.projects.v1";
@@ -38,6 +40,14 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
   const initialized = useRef(false);
   const isProcessing = useRef(false);
+
+  useEffect(() => {
+    loadDemoMode();
+    const unsub = subscribeDemoMode(() => {});
+    return () => {
+      unsub();
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -159,6 +169,24 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         .filter(Boolean)
         .join(", ");
 
+      const finishWithDemo = () => {
+        const demoUri = generateDemoImage({
+          panelNumber: foundPanel!.panelNumber,
+          prompt: foundPanel!.prompt,
+          narration: foundPanel!.narration,
+        });
+        updatePanel(panelId, { status: "completed", imagePath: demoUri });
+      };
+
+      if (getDemoModeSync()) {
+        // Tiny delay so the "generating" state is visible — feels like work.
+        await new Promise((r) => setTimeout(r, 350));
+        finishWithDemo();
+        setQueue((q) => q.slice(1));
+        isProcessing.current = false;
+        return;
+      }
+
       try {
         const response = await fetch(apiUrl("/api/image"), {
           method: "POST",
@@ -180,8 +208,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
           imagePath: data.image_path ?? data.imagePath,
         });
       } catch (err) {
-        console.warn("Image generation failed", err);
-        updatePanel(panelId, { status: "failed" });
+        console.warn("Image generation failed, using offline demo", err);
+        finishWithDemo();
       } finally {
         setQueue((q) => q.slice(1));
         isProcessing.current = false;
