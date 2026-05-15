@@ -1,22 +1,25 @@
 {
   "expo": {
-    "name": "FairyTail Forge Mobile",
+    "name": "FairyTail Forge",
     "slug": "fairytail-forge-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "fairytail-forge-mobile",
-    "userInterfaceStyle": "automatic",
+    "scheme": "fairytailforgemobile",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#020617"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.replit.fairytailforgemobile"
     },
-    "android": {},
+    "android": {
+      "package": "com.replit.fairytailforgemobile"
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },

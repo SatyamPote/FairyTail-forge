@@ -14,16 +14,30 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ProjectProvider } from "@/context/ProjectContext";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   return (
-    <Stack screenOptions={{ headerBackTitle: "Back" }}>
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: "#020617" },
+        headerTintColor: "#f8fafc",
+        headerTitleStyle: { fontFamily: "Inter_600SemiBold" },
+        contentStyle: { backgroundColor: "#020617" },
+      }}
+    >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="forge"
+        options={{
+          presentation: "modal",
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }
@@ -48,9 +62,11 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <GestureHandlerRootView>
+          <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <RootLayoutNav />
+              <ProjectProvider>
+                <RootLayoutNav />
+              </ProjectProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>
