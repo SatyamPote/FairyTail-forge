@@ -156,10 +156,13 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (!response.ok) throw new Error("Image generation failed");
-        const data = (await response.json()) as { imagePath?: string };
+        const data = (await response.json()) as {
+          image_path?: string;
+          imagePath?: string;
+        };
         updatePanel(panelId, {
           status: "completed",
-          imagePath: data.imagePath,
+          imagePath: data.image_path ?? data.imagePath,
         });
       } catch (err) {
         console.warn("Image generation failed", err);
