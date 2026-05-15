@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "FairyTail Forge"
+version = "1.0.0"
+id = "artifacts/fairytail-forge"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26113
+
+[services.development]
+run = "pnpm --filter @workspace/fairytail-forge run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/fairytail-forge", "run", "build" ]
+publicDir = "artifacts/fairytail-forge/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26113"
+BASE_PATH = "/"

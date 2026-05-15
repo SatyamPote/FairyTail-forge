@@ -1,36 +1,58 @@
-# [Project name]
+# FairyTail Forge
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An AI-powered offline comic generation studio. Users write a story prompt, pick a genre and panel count, and the app generates a full comic script via Ollama (local LLM) and images via a local Python AI service.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
+- `pnpm --filter @workspace/fairytail-forge run dev` — run the frontend (assigned port via workflow)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `DATABASE_URL` — Postgres connection string (not yet used, reserved for future persistence)
+
+## External Dependencies (local — not in Replit)
+
+This app was originally designed to run on a local machine with:
+- **Ollama** (`http://localhost:11434`) — local LLM for story generation (phi3, gemma, mistral, etc.)
+- **Python AI service** (`http://localhost:8000`) — local Stable Diffusion image generator using `comiccraft_v10.safetensors`
+
+Without these running, story and image generation will return errors (this is expected behavior).
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
+- Frontend: React 19 + Vite + Tailwind CSS v4 + Zustand
 - API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- DB: PostgreSQL + Drizzle ORM (reserved, not yet used)
+- Fonts: Inter + Outfit (Google Fonts)
+- Key packages: jspdf, html-to-image (PDF export), lucide-react, clsx
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/fairytail-forge/` — frontend (React + Vite), serves at `/`
+- `artifacts/api-server/` — Express API, serves at `/api`
+- `artifacts/api-server/src/routes/comic.ts` — comic routes: `/api/models`, `/api/story`, `/api/image`
+- `artifacts/fairytail-forge/src/components/` — Sidebar, ComicCanvas, PanelCard, StoryGeneratorModal, CharacterList
+- `artifacts/fairytail-forge/src/store/useStore.ts` — Zustand store (project state, generation queue)
+- `artifacts/fairytail-forge/src/hooks/useQueue.ts` — sequential image generation queue
+- `artifacts/fairytail-forge/src/types/index.ts` — shared TypeScript types
+- `lib/api-spec/openapi.yaml` — OpenAPI spec (health endpoint only; comic routes are direct Express routes)
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Comic API routes bypass the OpenAPI codegen pattern and are implemented as plain Express routes in `artifacts/api-server/src/routes/comic.ts`. This is intentional: the story endpoint streams raw Ollama NDJSON, which doesn't fit a typed REST pattern cleanly.
+- State management (projects, panels, generation queue) lives entirely in Zustand client state — no DB persistence yet.
+- The sequential image generation queue is a custom hook (`useQueue`) that processes one panel at a time to avoid overwhelming the local Python AI service.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- **Story Generation**: Users describe a story, pick genre + panel count → Ollama streams a JSON script with characters and panel descriptions
+- **Comic Canvas**: A4-format comic page with asymmetric panel layout (first panel spans 2 rows, last spans full width)
+- **Panel Inking**: Each panel can be individually re-generated or queued for automatic sequential generation
+- **PDF Export**: Export the current comic page to a PDF using jsPDF + html-to-image
+- **Theme Switcher**: Studio Dark, Manga White, Cyberpunk Neon, Retro Comic themes
 
 ## User preferences
 
@@ -38,7 +60,9 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- The frontend API calls use relative URLs (`/api/...`) which the shared proxy routes to the api-server. Do not add explicit ports or Vite proxy configs.
+- `pnpm dev` at workspace root has no script — always use `pnpm --filter <package> run dev` or restart via workflow.
+- The `scan` CSS animation in PanelCard uses Tailwind's arbitrary `animate-[scan_2s_linear_infinite]` — the `@keyframes scan` definition is in `index.css`.
 
 ## Pointers
 
