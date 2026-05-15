@@ -1,0 +1,157 @@
+Proceed with ALL THREE hardening tasks.
+
+==================================================
+TASK 1 — ADD OFFLINE-FIRST GUARDRAIL
+====================================
+
+Create a permanent OFFLINE-FIRST policy section inside:
+
+* replit.md
+* README.md
+
+The policy must clearly state:
+
+FairyTail Forge is:
+
+* local-first
+* offline-first
+* no subscription required
+* no cloud AI dependency
+* no mandatory API keys
+* no mandatory login system
+
+Forbidden integrations:
+
+* OpenAI API
+* Anthropic API
+* Gemini API
+* Stability API
+* Replicate API
+* paid cloud inference providers
+
+Future contributors and AI agents must preserve this architecture.
+
+==================================================
+TASK 2 — CREATE OFFLINE SECURITY CHECK SCRIPT
+=============================================
+
+Create:
+
+pnpm run check:offline
+
+This script should automatically scan the repo for:
+
+* forbidden SDK imports
+* forbidden cloud domains
+* payment SDKs
+* auth SDKs
+* hardcoded API keys
+* Bearer tokens
+
+Scan for:
+
+* openai
+* anthropic
+* gemini
+* replicate
+* stability
+* huggingface inference
+* stripe
+* revenuecat
+* clerk
+* firebase auth
+* supabase auth
+
+The script should:
+
+* fail CI if forbidden dependencies exist
+* print warnings
+* show offending files
+
+==================================================
+TASK 3 — CREATE LOCAL_SETUP.md
+==============================
+
+Create a complete LOCAL_SETUP.md guide explaining:
+
+==================================================
+LOCAL STORY MODEL SETUP
+=======================
+
+Recommended:
+
+* Qwen2 1.5B Q4
+* TinyLlama
+* Phi-2 quantized
+
+Runtime:
+
+* llama.cpp
+* Ollama optional
+* ONNX Runtime
+
+==================================================
+LOCAL IMAGE MODEL SETUP
+=======================
+
+Recommended:
+
+* SD1.5 Turbo
+* LCM
+* Manga LoRA
+* black-and-white line art LoRA
+
+Explain:
+
+* model download
+* folder placement
+* quantized formats
+* VRAM requirements
+
+==================================================
+LOCAL IMAGE RUNTIME
+===================
+
+Document:
+
+* Python SD service
+* ComfyUI optional
+* stable-diffusion.cpp
+* ONNX Runtime
+* NCNN
+
+==================================================
+HARDWARE RECOMMENDATIONS
+========================
+
+Minimum:
+
+* RTX 3060 12GB
+* 16GB RAM
+
+Recommended:
+
+* RTX 4070+
+* 32GB RAM
+
+Mobile:
+
+* Snapdragon 8 Gen series
+* Apple M-series
+
+==================================================
+IMPORTANT FINAL REQUIREMENT
+===========================
+
+Do NOT introduce:
+
+* cloud lock-in
+* subscriptions
+* online auth requirements
+* cloud AI dependencies
+
+Preserve FairyTail Forge as:
+"A fully local AI storytelling and manga creation studio."
+
+After these hardening tasks are complete:
+continue building the actual AI storytelling pipeline and MangaForge generation engine.

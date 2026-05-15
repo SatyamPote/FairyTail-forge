@@ -2,6 +2,16 @@
 
 An AI-powered offline comic generation studio. Users write a story prompt, pick a genre and panel count, and the app generates a full comic script via Ollama (local LLM) and images via a local Python AI service.
 
+## Offline-first policy (DO NOT VIOLATE)
+
+FairyTail Forge is **local-first, offline-first, no subscription, no cloud AI dependency, no mandatory API keys, no mandatory login**. All core generation must run on the user's machine.
+
+**Forbidden as required dependencies for core features:** OpenAI, Anthropic, Google Gemini, Stability AI, Replicate, HuggingFace paid inference, any other paid cloud inference provider, Stripe / RevenueCat / other payment SDKs, Clerk / Firebase Auth / Supabase Auth / other mandatory cloud auth.
+
+Internet access is allowed **only as optional enhancement** (downloading models, searching references, importing community LoRAs). The app must keep working fully offline after setup.
+
+Future contributors and AI agents **must preserve this architecture**. Before merging changes, run `pnpm run check:offline` — it scans for forbidden SDKs, cloud domains, and hardcoded secrets. See `README.md` and `LOCAL_SETUP.md` for the full policy and local-runtime setup.
+
 ## Run & Operate
 
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)

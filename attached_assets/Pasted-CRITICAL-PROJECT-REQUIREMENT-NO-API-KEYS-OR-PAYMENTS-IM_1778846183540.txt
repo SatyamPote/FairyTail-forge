@@ -1,0 +1,160 @@
+CRITICAL PROJECT REQUIREMENT — NO API KEYS OR PAYMENTS
+
+IMPORTANT:
+
+FairyTail Forge must be designed as a FULLY LOCAL and FREE AI software ecosystem.
+
+==================================================
+STRICT REQUIREMENTS
+===================
+
+The software MUST NOT require:
+
+* OpenAI API
+* Anthropic API
+* Gemini API
+* Stability API
+* Replicate API
+* HuggingFace paid inference
+* any cloud AI service
+* subscription services
+* login systems
+* online activation
+* API keys
+* payment gateways
+
+NO paid AI dependencies.
+
+NO cloud generation.
+
+NO subscription model required for core features.
+
+==================================================
+ALL AI MUST RUN LOCALLY
+=======================
+
+Story generation:
+
+* local LLM only
+
+Image generation:
+
+* local diffusion model only
+
+Memory:
+
+* local database only
+
+Comic generation:
+
+* local processing only
+
+Everything must work:
+
+* offline
+* locally
+* without internet
+
+==================================================
+OPTIONAL INTERNET FEATURES
+==========================
+
+Internet access should ONLY be optional for:
+
+* downloading models
+* searching references
+* updating software
+* downloading community LoRAs
+* importing datasets
+
+The app must still fully function offline after setup.
+
+==================================================
+MODEL REQUIREMENTS
+==================
+
+Use ONLY:
+
+* open-source models
+* downloadable models
+* quantized local models
+* GGUF models
+* ONNX models
+* NCNN/CoreML compatible models
+
+==================================================
+LOCAL STORY MODELS
+==================
+
+Use:
+
+* Qwen2 1.5B Q4
+* TinyLlama
+* Phi-2 quantized
+
+Run via:
+
+* llama.cpp
+* MLX
+* ONNX Runtime
+
+==================================================
+LOCAL IMAGE MODELS
+==================
+
+Use:
+
+* SD1.5 Turbo
+* LCM
+* Tiny diffusion models
+* Manga LoRA
+* Line-art-only LoRA
+
+Run via:
+
+* stable-diffusion.cpp
+* NCNN
+* ONNX Runtime
+* TensorRT optional
+
+==================================================
+BUSINESS MODEL DIRECTION
+========================
+
+The software should be:
+
+* creator-owned
+* offline-first
+* privacy-focused
+* independent from cloud providers
+
+The user should:
+
+* own their data
+* own their models
+* own their generated comics
+
+==================================================
+IMPORTANT ENGINEERING RULE
+==========================
+
+Never hardcode:
+
+* API keys
+* cloud endpoints
+* payment systems
+* account requirements
+
+The software must remain:
+
+* self-contained
+* installable locally
+* usable forever without subscriptions
+
+==================================================
+FINAL PRODUCT GOAL
+==================
+
+FairyTail Forge should become:
+
+"A fully local AI storytelling and manga creation studio with zero subscriptions, zero API requirements, and complete offline ownership."
