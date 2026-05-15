@@ -1,0 +1,490 @@
+PROJECT NAME: MangaForge Mobile
+
+Build a FULLY OFFLINE AI manga/comic generation engine optimized for MOBILE DEVICES.
+
+==================================================
+CORE GOAL
+=========
+
+Create a lightweight AI manga generator that:
+
+* works fully offline
+* runs on Android and iOS
+* generates ONLY black-and-white manga line art
+* generates comic stories locally
+* creates comic pages
+* uses SMALL models
+* runs FAST on mobile GPUs and CPUs
+
+DO NOT use:
+
+* cloud APIs
+* OpenAI APIs
+* Ollama
+* SDXL
+* Flux
+* huge models
+* photorealistic generation
+
+This software must prioritize:
+
+* speed
+* low RAM
+* low VRAM
+* manga line art
+* mobile optimization
+
+==================================================
+FINAL PIPELINE
+==============
+
+USER STORY IDEA
+↓
+Tiny Local Story Model
+↓
+Comic Script Generator
+↓
+Panel Splitter
+↓
+Prompt Cleaner
+↓
+Tiny Manga Diffusion Model
+↓
+Line Art Generator
+↓
+Comic Page Composer
+↓
+Export PNG/PDF
+
+==================================================
+PRIMARY REQUIREMENTS
+====================
+
+The app must:
+
+* generate manga stories locally
+* generate manga panels locally
+* work offline
+* use lightweight models
+* support Android
+* support iOS
+* support desktop later
+
+==================================================
+TARGET MODEL SIZE
+=================
+
+TOTAL APP AI SIZE TARGET:
+1GB – 2GB MAXIMUM
+
+Target allocation:
+
+Story Model:
+300MB – 700MB
+
+Image Model:
+500MB – 1GB
+
+LoRA:
+50MB – 150MB
+
+==================================================
+STORY MODEL REQUIREMENTS
+========================
+
+DO NOT use Ollama.
+
+Instead:
+build direct local model inference.
+
+Use:
+
+* llama.cpp
+* GGUF models
+* MLX support for Apple
+* ONNX runtime optional
+
+Recommended models:
+
+* Qwen2 1.5B Q4
+* TinyLlama
+* Phi-2 quantized
+
+Purpose:
+
+* story writing
+* panel descriptions
+* dialogue generation
+* pacing generation
+
+==================================================
+IMAGE MODEL REQUIREMENTS
+========================
+
+The image model MUST:
+
+* generate ONLY black-and-white manga line art
+* avoid color completely
+* avoid realistic shading
+* avoid painterly styles
+* prioritize:
+
+  * line art
+  * ink drawing
+  * manga composition
+  * comic panel readability
+
+Use:
+
+* SD1.5 Turbo
+* LCM SD1.5
+* Tiny diffusion model
+* distilled diffusion model
+
+Add:
+
+* Manga LoRA
+* Black-and-white line art LoRA
+
+==================================================
+IMAGE GENERATION STYLE
+======================
+
+Required output:
+
+* monochrome
+* manga ink
+* clean outlines
+* black-and-white only
+* cel-shaded manga style
+* storyboard quality
+* comic readability
+
+==================================================
+NEGATIVE PROMPT SYSTEM
+======================
+
+Always suppress:
+
+* color
+* watercolor
+* photorealism
+* painterly rendering
+* blurry details
+* realistic skin
+* CGI
+* 3D rendering
+* over-detailing
+
+==================================================
+IMAGE PROMPT TEMPLATE
+=====================
+
+masterpiece,
+black and white manga,
+clean ink line art,
+manga panel,
+comic storyboard,
+sharp outlines,
+high contrast,
+professional manga illustration,
+monochrome,
+dynamic composition,
+detailed line work,
+anime comic style,
+white background,
+black ink
+
+Character:
+[CHARACTER DESCRIPTION]
+
+Scene:
+[SCENE DESCRIPTION]
+
+Camera:
+[CAMERA ANGLE]
+
+Emotion:
+[EMOTION]
+
+Negative Prompt:
+color,
+painting,
+watercolor,
+photorealistic,
+cgi,
+3d,
+blurry,
+low quality,
+bad anatomy,
+distorted face,
+extra limbs,
+realistic lighting
+
+==================================================
+MOBILE INFERENCE ENGINE
+=======================
+
+Build using:
+
+ANDROID:
+
+* Kotlin
+* NCNN
+* ONNX Runtime Mobile
+* Vulkan acceleration
+
+IOS:
+
+* Swift
+* CoreML
+* Metal acceleration
+
+DESKTOP:
+
+* Python backend optional
+
+==================================================
+MODEL RUNTIME
+=============
+
+Use:
+
+* stable-diffusion.cpp
+  OR
+* NCNN diffusion runtime
+
+Optimize for:
+
+* 4-step generation
+* 512x512 output
+* low VRAM
+* fast generation
+
+Target:
+2–5 second generation on good mobile devices.
+
+==================================================
+PIPELINE MODULES
+================
+
+Build these modules:
+
+1. Story Engine
+2. Script Generator
+3. Panel Planner
+4. Prompt Enhancer
+5. Manga Image Generator
+6. Character Memory System
+7. Comic Layout Composer
+8. Export System
+
+==================================================
+CHARACTER MEMORY SYSTEM
+=======================
+
+Store:
+
+* hairstyle
+* clothing
+* facial features
+* accessories
+* personality traits
+
+Generate:
+
+* consistent prompts
+* reusable visual descriptors
+
+==================================================
+COMIC SCRIPT FORMAT
+===================
+
+Output format:
+
+PANEL 1:
+Scene:
+Characters:
+Camera:
+Emotion:
+Dialogue:
+Image Prompt:
+
+PANEL 2:
+Scene:
+Characters:
+Camera:
+Emotion:
+Dialogue:
+Image Prompt:
+
+==================================================
+UI REQUIREMENTS
+===============
+
+Create MODERN mobile UI.
+
+Include:
+
+* dark mode
+* project browser
+* prompt input
+* story editor
+* comic preview
+* image gallery
+* export menu
+
+Screens:
+
+1. Home
+2. Story Generator
+3. Character Manager
+4. Comic Editor
+5. Settings
+
+==================================================
+COMIC PAGE COMPOSER
+===================
+
+Support:
+
+* manga layouts
+* webtoon layouts
+* automatic panel arrangement
+* speech bubbles
+* PNG export
+* PDF export
+
+==================================================
+MODEL TRAINING SUPPORT
+======================
+
+Build OPTIONAL lightweight training support.
+
+Support:
+
+* LoRA training
+* line art fine tuning
+* character style training
+
+Training tools:
+
+* kohya_ss
+* PEFT
+* diffusers
+* accelerate
+
+==================================================
+DATASET REQUIREMENTS
+====================
+
+Training datasets should:
+
+* contain manga pages
+* contain black-and-white line art
+* avoid color illustrations
+
+Auto preprocessing:
+
+* grayscale conversion
+* edge enhancement
+* resize normalization
+* caption generation
+
+==================================================
+PROJECT STRUCTURE
+=================
+
+/mangaforge
+/app
+/models
+/runtime
+/story_engine
+/image_engine
+/memory
+/datasets
+/exports
+/training
+/ui
+
+==================================================
+IMPORTANT ENGINEERING GOALS
+===========================
+
+Prioritize:
+
+1. lightweight architecture
+2. modular code
+3. mobile optimization
+4. low memory usage
+5. offline-first workflow
+6. scalable AI pipeline
+7. fast inference speed
+
+==================================================
+FIRST MVP REQUIREMENTS
+======================
+
+STEP 1:
+
+* story prompt input
+* local story generation
+* manga line art generation
+* save images
+
+STEP 2:
+
+* comic page composition
+* speech bubbles
+* PDF export
+
+STEP 3:
+
+* character consistency
+* LoRA support
+* lightweight training
+
+==================================================
+VERY IMPORTANT
+==============
+
+The generated images do NOT need:
+
+* high realism
+* advanced coloring
+* cinematic rendering
+
+The ONLY goal is:
+
+* readable manga panels
+* expressive line art
+* fast generation
+* low resource usage
+
+==================================================
+FINAL GOAL
+==========
+
+Build a fully offline AI manga studio for mobile devices that:
+
+* creates stories
+* generates manga panels
+* exports comics
+* works fully offline
+* runs on consumer devices
+* uses tiny local AI models
+
+Generate:
+
+* complete project structure
+* mobile app architecture
+* runtime integration
+* local AI inference pipeline
+* manga generation pipeline
+* starter UI
+* inference wrappers
+* model management system
+* export system
+* modular scalable architecture
+
+Start with MVP architecture first.
