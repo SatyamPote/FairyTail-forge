@@ -220,11 +220,14 @@ export default function ForgeScreen() {
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>
               New Story
             </Text>
-            <Text
-              style={[styles.headerSub, { color: colors.mutedForeground }]}
-            >
-              AI drafts your script
-            </Text>
+            <View style={styles.styleBadgeRow}>
+              <Feather name="edit-3" size={11} color={colors.mutedForeground} />
+              <Text
+                style={[styles.headerSub, { color: colors.mutedForeground }]}
+              >
+                Manga · B&W line art
+              </Text>
+            </View>
           </View>
         </View>
         <Pressable
@@ -532,6 +535,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontFamily: "Inter_700Bold" },
   headerSub: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  styleBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 2,
+  },
   scroll: { padding: 20, paddingBottom: 40 },
   section: { marginBottom: 22 },
   sectionHead: {

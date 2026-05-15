@@ -9,7 +9,8 @@ import React, {
 } from "react";
 
 import { apiUrl } from "@/lib/api";
-import { Panel, Project } from "@/types";
+import { buildMangaPrompt, MANGA_NEGATIVE_PROMPT } from "@/lib/manga";
+import { Character, Panel, Project } from "@/types";
 
 const STORAGE_KEY = "ff.projects.v1";
 const CURRENT_KEY = "ff.currentProjectId.v1";
@@ -124,13 +125,15 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     const panelId = queue[0];
 
     (async () => {
-      // Find panel across all projects
+      // Find panel + owning project's characters across all projects
       let foundPanel: Panel | undefined;
+      let projectCharacters: Character[] = [];
       for (const project of projects) {
         for (const page of project.pages) {
           const p = page.panels.find((pp) => pp.id === panelId);
           if (p) {
             foundPanel = p;
+            projectCharacters = project.characters;
             break;
           }
         }
@@ -145,13 +148,25 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
       updatePanel(panelId, { status: "generating" });
 
+      const mangaPrompt = buildMangaPrompt({
+        scene: foundPanel.prompt,
+        characters: projectCharacters,
+      });
+      const negativePrompt = [
+        foundPanel.negativePrompt,
+        MANGA_NEGATIVE_PROMPT,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
       try {
         const response = await fetch(apiUrl("/api/image"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            prompt: foundPanel.prompt,
-            negativePrompt: foundPanel.negativePrompt,
+            prompt: mangaPrompt,
+            negativePrompt,
+            negative_prompt: negativePrompt,
           }),
         });
 
